@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-python write_to_video.py --output ~/Videos/example.mp4 --picamera 1
+python video_writer.py --output ~/Videos/example.mp4 --picamera 1
