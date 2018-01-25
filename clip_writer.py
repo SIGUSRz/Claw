@@ -77,7 +77,7 @@ while True:
         pointer = 0
         timeframe = (timeframe + 1) % length
         writer.release()
-        writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe), fourcc, args["fps"],
+        writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi", fourcc, args["fps"],
                                  (w, h), True)
     # show the frames
     cv2.imshow("Frame", frame)
