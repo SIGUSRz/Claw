@@ -30,7 +30,9 @@ time.sleep(2.0)
 fourcc = cv2.VideoWriter_fourcc(*args["codec"])
 writer = None
 (h, w) = (None, None)
-zeros = None
+temp = list()
+pointer = 0
+total = 30 * 30
 
 # loop over frames from the video stream
 while True:
@@ -46,7 +48,7 @@ while True:
         (h, w) = frame.shape[:2]
         writer = cv2.VideoWriter(args["output"], fourcc, args["fps"],
                                  (w, h), True)
-        zeros = np.zeros((h, w), dtype="uint8")
+        # zeros = np.zeros((total, h, w), dtype="uint8")
 
     # break the image into its RGB components, then construct the
     # RGB representation of each frame individually
@@ -65,8 +67,10 @@ while True:
     # output[h:h * 2, w:w * 2] = G
     # output[h:h * 2, 0:w] = B
 
-    # write the output frame to file
-    writer.write(frame)
+    temp.append(frame)
+    pointer = (pointer + 1) % total
+    if pointer >= total:
+        temp.pop(0)
 
     # show the frames
     cv2.imshow("Frame", frame)
@@ -75,6 +79,7 @@ while True:
 
     # if the `q` key was pressed, break from the loop
     if key == ord("q"):
+        writer.write(temp)
         break
 
 # do a bit of cleanup
