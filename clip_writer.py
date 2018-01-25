@@ -41,7 +41,7 @@ while True:
     # grab the frame from the video stream and resize it to have a
     # maximum width of 300 pixels
     frame = vs.read()
-    frame = imutils.resize(frame, width=w)
+    # frame = imutils.resize(frame, width=w)
 
     # check if the writer is None
     if writer is None:
