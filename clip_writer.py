@@ -71,7 +71,8 @@ while True:
     temp.append(frame)
     pointer += 1
     if pointer > args["fps"]:
-        writer.write(temp)
+        for img in temp:
+            writer.write(img)
         temp = list()
         pointer = 0
         timeframe = (timeframe + 1) % length
