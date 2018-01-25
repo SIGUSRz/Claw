@@ -28,9 +28,8 @@ time.sleep(2.0)
 # initialize the FourCC, video writer, dimensions of the frame, and
 # zeros array
 fourcc = cv2.VideoWriter_fourcc(*args["codec"])
-(h, w) = (400, 500)
-writer = cv2.VideoWriter(args["output"], fourcc, args["fps"],
-                         (w * 2, h * 2), True)
+writer = None
+(h, w) = (None, None)
 zeros = None
 
 # loop over frames from the video stream
@@ -38,14 +37,17 @@ while True:
     # grab the frame from the video stream and resize it to have a
     # maximum width of 300 pixels
     frame = vs.read()
-    frame = imutils.resize(frame, height=h, width=w)
+    frame = imutils.resize(frame, width=300)
 
     # check if the writer is None
-    # store the image dimensions, initialzie the video writer,
-    # and construct the zeros array
-    (h, w) = frame.shape[:2]
-
-    zeros = np.zeros((h, w), dtype="uint8")
+    if writer is None:
+        # store the image dimensions, initialzie the video writer,
+        # and construct the zeros array
+        (h, w) = frame.shape[:2]
+        print(frame.shape)
+        writer = cv2.VideoWriter(args["output"], fourcc, args["fps"],
+                                 (w * 2, h * 2), True)
+        zeros = np.zeros((h, w), dtype="uint8")
 
     # break the image into its RGB components, then construct the
     # RGB representation of each frame individually
