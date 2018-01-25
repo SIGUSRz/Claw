@@ -13,7 +13,7 @@ ap.add_argument("-o", "--output", required=True,
                 help="path to output video file")
 ap.add_argument("-p", "--picamera", type=int, default=-1,
                 help="whether or not the Raspberry Pi camera should be used")
-ap.add_argument("-f", "--fps", type=int, default=20,
+ap.add_argument("-f", "--fps", type=int, default=30,
                 help="FPS of output video")
 ap.add_argument("-c", "--codec", type=str, default="MJPG",
                 help="codec of output video")
@@ -24,16 +24,12 @@ args = vars(ap.parse_args())
 print("[INFO] warming up camera...")
 vs = VideoStream(usePiCamera=args["picamera"] > 0).start()
 time.sleep(2.0)
-firstFrame = cv2.VideoCapture(0)
-if not firstFrame.isOpened():
-    print("Unable to read camera")
 
 # initialize the FourCC, video writer, dimensions of the frame, and
 # zeros array
-
 fourcc = cv2.VideoWriter_fourcc(*args["codec"])
 writer = None
-(h, w) = (int(firstFrame.get(3)), int(firstFrame.get(4)))
+(h, w) = (None, None)
 zeros = None
 
 # loop over frames from the video stream
@@ -41,7 +37,7 @@ while True:
     # grab the frame from the video stream and resize it to have a
     # maximum width of 300 pixels
     frame = vs.read()
-    # frame = imutils.resize(frame, width=w)
+    frame = imutils.resize(frame, width=500)
 
     # check if the writer is None
     if writer is None:
