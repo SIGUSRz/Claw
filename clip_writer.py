@@ -70,7 +70,7 @@ while True:
 
     temp.append(frame)
     pointer += 1
-    if pointer > args["fps"]:
+    if pointer >= args["fps"]:
         for img in temp:
             writer.write(img)
         temp = list()
@@ -86,6 +86,11 @@ while True:
 
     # if the `q` key was pressed, break from the loop
     if key == ord("q"):
+        if pointer < length - 1:
+            for img in temp:
+                writer.write(img)
+            for i in range(length - 1 - pointer):
+                writer.write(temp[pointer])
         break
 
 # do a bit of cleanup
