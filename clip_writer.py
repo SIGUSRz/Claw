@@ -90,7 +90,7 @@ while True:
             for img in temp:
                 writer.write(img)
             for i in range(length - 1 - pointer):
-                writer.write(temp[pointer])
+                writer.write(temp[pointer - 1])
         break
 
 # do a bit of cleanup
