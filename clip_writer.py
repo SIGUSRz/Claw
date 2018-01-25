@@ -30,9 +30,10 @@ time.sleep(2.0)
 fourcc = cv2.VideoWriter_fourcc(*args["codec"])
 writer = None
 (h, w) = (None, None)
+length = 30
 temp = list()
 pointer = 0
-total = 30 * 30
+timeframe = 0
 
 # loop over frames from the video stream
 while True:
@@ -46,7 +47,7 @@ while True:
         # store the image dimensions, initialzie the video writer,
         # and construct the zeros array
         (h, w) = frame.shape[:2]
-        writer = cv2.VideoWriter(args["output"], fourcc, args["fps"],
+        writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe), fourcc, args["fps"],
                                  (w, h), True)
         # zeros = np.zeros((total, h, w), dtype="uint8")
 
@@ -68,10 +69,15 @@ while True:
     # output[h:h * 2, 0:w] = B
 
     temp.append(frame)
-    pointer = (pointer + 1) % total
-    if pointer >= total:
-        temp.pop(0)
-
+    pointer += 1
+    if pointer > args["fps"]:
+        writer.write(temp)
+        temp = list()
+        pointer = 0
+        timeframe = (timeframe + 1) % length
+        writer.release()
+        writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe), fourcc, args["fps"],
+                                 (w, h), True)
     # show the frames
     cv2.imshow("Frame", frame)
     # cv2.imshow("Output", output)
@@ -79,7 +85,6 @@ while True:
 
     # if the `q` key was pressed, break from the loop
     if key == ord("q"):
-        writer.write(temp)
         break
 
 # do a bit of cleanup
