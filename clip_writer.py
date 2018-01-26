@@ -89,7 +89,7 @@ def main(args):
     writer.release()
 
 
-if __name__ == "main":
+if __name__ == "__main__":
     # construct the argument parse and parse the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output", required=True,
