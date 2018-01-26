@@ -10,7 +10,7 @@ import time
 import cv2
 
 
-def main():
+def main(args):
     # initialize the camera and stream
     camera = PiCamera()
     camera.resolution = (320, 240)
