@@ -70,6 +70,7 @@ def main(args):
             writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi", fourcc, args["fps"],
                                      (w, h), True)
 
+        cv2.imshow("Frame", frame)
         key = cv2.waitKey(1) & 0xFF
 
         # if the `q` key was pressed, break from the loop
@@ -79,7 +80,6 @@ def main(args):
                     writer.write(img)
                 for i in range(length - 1 - pointer):
                     writer.write(temp[pointer - 1])
-
             break
 
     # do a bit of cleanup
