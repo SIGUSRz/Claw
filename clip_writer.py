@@ -75,10 +75,7 @@ def main(args):
 
         # if the `q` key was pressed, break from the loop
         if key == ord("q"):
-            if pointer < length - 1:
-                print(len(temp))
-                print(pointer)
-                print(length - 1 - pointer)
+            if pointer and pointer < length - 1:
                 for img in temp:
                     writer.write(img)
                 for i in range(length - 1 - pointer):
