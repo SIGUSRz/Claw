@@ -13,34 +13,63 @@ import cv2
 def main(args):
     # created a *threaded *video stream, allow the camera sensor to warmup,
     # and start the FPS counter
-    print("[INFO] sampling THREADED frames from `picamera` module...")
+    print("[INFO] warming up camera...")
     vs = PiVideoStream().start()
     time.sleep(2.0)
-    fps = FPS().start()
+
+    # initialize the FourCC, video writer, dimensions of the frame, and
+    # zeros array
+    fourcc = cv2.VideoWriter_fourcc(*args["codec"])
+    writer = None
+    (h, w) = (None, None)
+    length = 30
+    temp = list()
+    counter = 0
+    timeframe = 0
 
     # loop over some frames...this time using the threaded stream
-    while fps._numFrames < args["num_frames"]:
+    while True:
         # grab the frame from the threaded video stream and resize it
         # to have a maximum width of 400 pixels
         frame = vs.read()
         frame = imutils.resize(frame, width=400)
 
+        if writer is None:
+            # store the image dimensions, initialzie the video writer,
+            # and construct the zeros array
+            (h, w) = frame.shape[:2]
+            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe), fourcc, args["fps"],
+                                     (w, h), True)
+
         # check to see if the frame should be displayed to our screen
         if args["display"] > 0:
             cv2.imshow("Frame", frame)
-            key = cv2.waitKey(1) & 0xFF
 
-        # update the FPS counter
-        fps.update()
+        temp.append(frame)
+        counter += 1
+        if counter >= args["fps"]:
+            for img in temp:
+                writer.write(img)
+            temp = list()
+            counter = 0
+            timeframe = (timeframe + 1) % length
+            writer.release()
+            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
+                                     fourcc, args["fps"], (w, h), True)
 
-    # stop the timer and display FPS information
-    fps.stop()
-    print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
-    print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
-
+        key = cv2.waitKey(1) & 0xFF
+        # if the `q` key was pressed, break from the loop
+        if key == ord("q"):
+            if counter and counter < length - 1:
+                for img in temp:
+                    writer.write(img)
+                for i in range(length - 1 - counter):
+                    writer.write(temp[counter - 1])
+            break
     # do a bit of cleanup
     cv2.destroyAllWindows()
     vs.stop()
+    writer.release()
 
 
 if __name__ == "__main__":
