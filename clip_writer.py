@@ -49,8 +49,8 @@ def main(args):
             pointer = 0
             timeframe = (timeframe + 1) % length
             writer.release()
-            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi", fourcc, args["fps"],
-                                     (w, h), True)
+            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
+                                     fourcc, args["fps"], (w, h), True)
 
         cv2.imshow("Frame", frame)
         key = cv2.waitKey(1) & 0xFF
