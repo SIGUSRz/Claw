@@ -21,7 +21,7 @@ def main(args):
     fourcc = cv2.VideoWriter_fourcc(*args["codec"])
     writer = None
     (h, w) = (None, None)
-    length = 30
+    length = args["length"]
     temp = list()
     counter = 0
     timeframe = 0
