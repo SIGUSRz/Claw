@@ -65,9 +65,9 @@ def main(args):
                 for i in range(length - 1 - counter):
                     writer.write(temp[counter - 1])
             writer.release()
-            writer = cv2.VideoWriter(args["output"] + ".avi",
-                                     fourcc, args["fps"], (w, h), True)
-            summary(args["output"], timeframe, length, writer)
+            # writer = cv2.VideoWriter(args["output"] + ".avi",
+            #                          fourcc, args["fps"], (w, h), True)
+            # summary(args["output"], timeframe, length, writer)
             break
 
     print("[INFO] cleaning up...")
