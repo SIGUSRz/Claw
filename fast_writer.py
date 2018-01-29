@@ -30,11 +30,8 @@ def main(args):
     while True:
         # grab the frame from the threaded video stream and resize it
         # to have a maximum width of 400 pixels
-        (grabbed, frame) = vs.read()
+        frame = vs.read()
         frame = imutils.resize(frame, width=400)
-
-        if not grabbed:
-            break
 
         if writer is None:
             # store the image dimensions, initialzie the video writer,
