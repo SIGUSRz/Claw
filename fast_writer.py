@@ -78,7 +78,7 @@ def main(args):
 
 
 def summary(name, timeframe, length, writer):
-    for i in range(length):
+    for i in range(1):
         idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
         fvs = FileVideoStream(name + "_" + str(idx) + ".avi")
         print(name + "_" + str(idx) + ".avi")
