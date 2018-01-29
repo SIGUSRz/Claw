@@ -79,7 +79,7 @@ def summary(name, timeframe, length, writer):
     fvs = cv2.VideoCapture(name + "_1.avi")
     while True:
         (grabbed, frame) = fvs.read()
-        frame = imutils.resize(frame, width=400)
+        # frame = imutils.resize(frame, width=400)
         writer.write(frame)
 
         if not grabbed:
