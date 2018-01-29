@@ -68,25 +68,31 @@ def main(args):
     print("[INFO] cleaning up...")
     cv2.destroyAllWindows()
     vs.stop()
-    # print("[INFO] saving...")
-    # end_writer = cv2.VideoWriter(args["output"] + ".avi",
-    #                              fourcc, args["fps"], (w, h), True)
-    # summary(args["output"], timeframe, length, end_writer)
-    # end_writer.release()
+    print("[INFO] saving...")
+    end_writer = cv2.VideoWriter(args["output"] + ".avi",
+                                 fourcc, args["fps"], (w, h), True)
+    summary(args["output"], timeframe, length, end_writer)
+    end_writer.release()
 
 
 def summary(name, timeframe, length, writer):
-    for i in range(length):
-        idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
-        fvs = FileVideoStream(name + "_" + str(idx) + ".avi")
-        print(name + "_" + str(idx) + ".avi")
-        while fvs.more():
-            frame = fvs.read()
-            frame = imutils.resize(frame, width=400)
-            print("hey")
-            cv2.imshow("Frame", frame)
-            writer.write(frame)
-        fvs.stop()
+    fvs = FileVideoStream(name + "_1.avi")
+    while fvs.more():
+        frame = fvs.read()
+        frame = imutils.resize(frame, width=400)
+        writer.write(frame)
+    fvs.stop()
+    # for i in range(length):
+    #     idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
+    #     fvs = FileVideoStream(name + "_" + str(idx) + ".avi")
+    #     print(name + "_" + str(idx) + ".avi")
+    #     while fvs.more():
+    #         frame = fvs.read()
+    #         frame = imutils.resize(frame, width=400)
+    #         print("hey")
+    #         cv2.imshow("Frame", frame)
+    #         writer.write(frame)
+    #     fvs.stop()
 
 
 if __name__ == "__main__":
