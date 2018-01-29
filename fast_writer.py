@@ -84,6 +84,7 @@ def summary(name, timeframe, length, writer):
         while fvs.more():
             frame = fvs.read()
             frame = imutils.resize(frame, width=400)
+            cv2.imshow("Frame", frame)
             writer.write(frame)
         fvs.stop()
 
