@@ -37,8 +37,8 @@ def main(args):
             # store the image dimensions, initialzie the video writer,
             # and construct the zeros array
             (h, w) = frame.shape[:2]
-            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe), fourcc, args["fps"],
-                                     (w, h), True)
+            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
+                                     fourcc, args["fps"], (w, h), True)
 
         # check to see if the frame should be displayed to our screen
         if args["display"] > 0:
@@ -53,8 +53,7 @@ def main(args):
             counter = 0
             timeframe = (timeframe + 1) % length
             writer.release()
-            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
-                                     fourcc, args["fps"], (w, h), True)
+            writer = None
 
         key = cv2.waitKey(1) & 0xFF
         # if the `q` key was pressed, break from the loop
@@ -78,7 +77,7 @@ def main(args):
 
 
 def summary(name, timeframe, length, writer):
-    for i in range(1):
+    for i in range(length):
         idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
         fvs = FileVideoStream(name + "_" + str(idx) + ".avi")
         print(name + "_" + str(idx) + ".avi")
