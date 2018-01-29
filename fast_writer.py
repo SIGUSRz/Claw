@@ -71,10 +71,10 @@ def main(args):
     vs.stop()
     writer.release()
     print("[INFO] saving...")
-    writer = cv2.VideoWriter(args["output"] + ".avi",
-                             fourcc, args["fps"], (w, h), True)
-    summary(args["output"], timeframe, length, writer)
-    writer.release()
+    end_writer = cv2.VideoWriter(args["output"] + ".avi",
+                                 fourcc, args["fps"], (w, h), True)
+    summary(args["output"], timeframe, length, end_writer)
+    end_writer.release()
 
 
 def summary(name, timeframe, length, writer):
