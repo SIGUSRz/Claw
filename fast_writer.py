@@ -76,12 +76,14 @@ def main(args):
 
 
 def summary(name, timeframe, length, writer):
-    fvs = FileVideoStream(name + "_1.avi")
-    while fvs.more():
-        frame = fvs.read()
+    fvs = cv2.VideoCapture(name + "_1.avi")
+    while True:
+        (grabbed, frame) = fvs.read()
         frame = imutils.resize(frame, width=400)
         writer.write(frame)
-    fvs.stop()
+
+        if not grabbed:
+            break
     # for i in range(length):
     #     idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
     #     fvs = FileVideoStream(name + "_" + str(idx) + ".avi")
