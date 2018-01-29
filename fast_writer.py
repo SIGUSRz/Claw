@@ -1,7 +1,6 @@
 # import the necessary packages
-from __future__ import print_function
+from imutils.video import FileVideoStream
 from imutils.video.pivideostream import PiVideoStream
-from imutils.video import FPS
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import argparse
@@ -31,8 +30,11 @@ def main(args):
     while True:
         # grab the frame from the threaded video stream and resize it
         # to have a maximum width of 400 pixels
-        frame = vs.read()
+        (grabbed, frame) = vs.read()
         frame = imutils.resize(frame, width=400)
+
+        if not grabbed:
+            break
 
         if writer is None:
             # store the image dimensions, initialzie the video writer,
@@ -65,11 +67,27 @@ def main(args):
                     writer.write(img)
                 for i in range(length - 1 - counter):
                     writer.write(temp[counter - 1])
+            writer.release()
+            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
+                                     fourcc, args["fps"], (w, h), True)
+            summary(args["output"], timeframe, length, writer)
+            writer.release()
             break
-    # do a bit of cleanup
-    cv2.destroyAllWindows()
+
+    print("[INFO] cleaning up...")
     vs.stop()
-    writer.release()
+    cv2.destroyAllWindows()
+
+
+def summary(name, timeframe, length, writer):
+    for i in range(length):
+        idx = (2 * timeframe - i) % length if i > timeframe else (timeframe - i) % length
+        fvs = FileVideoStream(name + "_" + str(idx))
+        while fvs.more():
+            frame = fvs.read()
+            frame = imutils.resize(frame, width=400)
+            writer.write(frame)
+        fvs.stop()
 
 
 if __name__ == "__main__":
@@ -83,9 +101,8 @@ if __name__ == "__main__":
                         help="FPS of output video")
     parser.add_argument("-c", "--codec", type=str, default="MJPG",
                         help="codec of output video")
-
-    parser.add_argument("-n", "--num-frames", type=int, default=100,
-                        help="# of frames to loop over for FPS test")
+    parser.add_argument("-l", "--length", type=int, default=5,
+                        help="length of seconds of summary")
     parser.add_argument("-d", "--display", type=int, default=-1,
                         help="Whether or not frames should be displayed")
 
