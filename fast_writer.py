@@ -65,7 +65,7 @@ def main(args):
                 for i in range(length - 1 - counter):
                     writer.write(temp[counter - 1])
             writer.release()
-            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
+            writer = cv2.VideoWriter(args["output"] + ".avi",
                                      fourcc, args["fps"], (w, h), True)
             summary(args["output"], timeframe, length, writer)
             writer.release()
