@@ -64,15 +64,16 @@ def main(args):
                     writer.write(img)
                 for i in range(length - 1 - counter):
                     writer.write(temp[counter - 1])
-            writer.release()
             break
 
     print("[INFO] cleaning up...")
+    cv2.destroyAllWindows()
+    vs.stop()
+    writer.release()
+    print("[INFO] saving...")
     writer = cv2.VideoWriter(args["output"] + ".avi",
                              fourcc, args["fps"], (w, h), True)
     summary(args["output"], timeframe, length, writer)
-    cv2.destroyAllWindows()
-    vs.stop()
     writer.release()
 
 
