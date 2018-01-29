@@ -80,10 +80,11 @@ def summary(name, timeframe, length, writer):
     for i in range(length):
         idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
         fvs = FileVideoStream(name + "_" + str(idx) + ".avi")
-        print(name + "_" + str(idx) + ".avi")
+        print(fvs.more())
         while fvs.more():
             frame = fvs.read()
             frame = imutils.resize(frame, width=400)
+            print("hey")
             cv2.imshow("Frame", frame)
             writer.write(frame)
         fvs.stop()
