@@ -68,12 +68,12 @@ def main(args):
             writer = cv2.VideoWriter(args["output"] + ".avi",
                                      fourcc, args["fps"], (w, h), True)
             summary(args["output"], timeframe, length, writer)
-            writer.release()
             break
 
     print("[INFO] cleaning up...")
-    vs.stop()
     cv2.destroyAllWindows()
+    vs.stop()
+    writer.release()
 
 
 def summary(name, timeframe, length, writer):
