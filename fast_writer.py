@@ -7,6 +7,8 @@ import argparse
 import imutils
 import time
 import cv2
+import sys
+import os
 
 
 def main(args):
@@ -15,6 +17,7 @@ def main(args):
     print("[INFO] warming up camera...")
     vs = PiVideoStream().start()
     time.sleep(2.0)
+    check()
 
     # initialize the FourCC, video writer, dimensions of the frame, and
     # zeros array
@@ -58,46 +61,39 @@ def main(args):
         key = cv2.waitKey(1) & 0xFF
         # if the `q` key was pressed, break from the loop
         if key == ord("q"):
-            if counter and counter < length - 1:
-                for img in temp:
-                    writer.write(img)
-                for i in range(length - 1 - counter):
-                    writer.write(temp[counter - 1])
             break
 
     print("[INFO] cleaning up...")
     cv2.destroyAllWindows()
     vs.stop()
     print("[INFO] saving...")
-    end_writer = cv2.VideoWriter(args["output"] + ".avi",
-                                 fourcc, args["fps"], (w, h), True)
-    summary(args["output"], timeframe, length, end_writer)
-    end_writer.release()
+    summary(args["output"], timeframe, length)
 
 
-def summary(name, timeframe, length, writer):
-    fvs = cv2.VideoCapture(name + "_1.avi")
-    while True:
-        (grabbed, frame) = fvs.read()
-        if frame is None:
-            print("None")
-        else:
-            frame = imutils.resize(frame, width=400)
-        writer.write(frame)
+def summary(prefix, timeframe, length):
+    name = ""
+    for i in range(length):
+        idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
+        name += "file '" + prefix + "_" + str(idx) + ".avi'\n"
 
-        if not grabbed:
-            break
-    # for i in range(length):
-    #     idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
-    #     fvs = FileVideoStream(name + "_" + str(idx) + ".avi")
-    #     print(name + "_" + str(idx) + ".avi")
-    #     while fvs.more():
-    #         frame = fvs.read()
-    #         frame = imutils.resize(frame, width=400)
-    #         print("hey")
-    #         cv2.imshow("Frame", frame)
-    #         writer.write(frame)
-    #     fvs.stop()
+def check():
+    # Check if the base directory envirnonment variable is defined
+    ffmpeg = ''
+    try:
+        ffmpeg = os.environ['FFMPEG_DIRECTORY']
+    except:
+        print("Point FFMPEG_DIRECTORY environment variable to the location of FFMPEG")
+        return None
+    # Check if the binaries are not located in restricted directory
+    if -1 != ffmpeg.lower().find('system32'):
+        print('The ffmpeg binaries cannot be under system32 directory')
+        return None
+    # Check if the binaries exist
+    binaries = ffmpeg + os.sep + 'bin' + os.sep
+    if not (os.path.exists(binaries + 'ffmpeg') or os.path.exists(binaries + 'ffmpeg.exe')):
+        print('Please download the ffmpeg binaries from www.ffmpeg.org')
+        return None
+    return binaries
 
 
 if __name__ == "__main__":
