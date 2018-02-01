@@ -7,7 +7,6 @@ import argparse
 import imutils
 import time
 import cv2
-import sys
 import os
 
 
@@ -17,7 +16,6 @@ def main(args):
     print("[INFO] warming up camera...")
     vs = PiVideoStream().start()
     time.sleep(2.0)
-    check()
 
     # initialize the FourCC, video writer, dimensions of the frame, and
     # zeros array
@@ -28,6 +26,7 @@ def main(args):
     temp = list()
     counter = 0
     timeframe = 0
+    cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
 
     # loop over some frames...this time using the threaded stream
     while True:
@@ -43,10 +42,6 @@ def main(args):
             writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
                                      fourcc, args["fps"], (w, h), True)
 
-        # check to see if the frame should be displayed to our screen
-        if args["display"] > 0:
-            cv2.imshow("Frame", frame)
-
         temp.append(frame)
         counter += 1
         if counter >= args["fps"]:
@@ -56,11 +51,22 @@ def main(args):
             counter = 0
             timeframe = (timeframe + 1) % length
             writer.release()
-            writer = None
+            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
+                                     fourcc, args["fps"], (w, h), True)
+
+        # check to see if the frame should be displayed to our screen
+        if args["display"] > 0:
+            cv2.imshow("Frame", frame)
 
         key = cv2.waitKey(1) & 0xFF
         # if the `q` key was pressed, break from the loop
         if key == ord("q"):
+            if counter != args["fps"] - 1 and writer is not None:
+                for img in temp:
+                    writer.write(img)
+                for i in range(len(temp), args["fps"]):
+                    writer.write(frame)
+                writer.release()
             break
 
     print("[INFO] cleaning up...")
@@ -72,28 +78,12 @@ def main(args):
 
 def summary(prefix, timeframe, length):
     name = ""
-    for i in range(length):
+    txt = open(prefix + ".txt", "w")
+    for i in range(length - 1, -1, -1):
         idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
-        name += "file '" + prefix + "_" + str(idx) + ".avi'\n"
-
-def check():
-    # Check if the base directory envirnonment variable is defined
-    ffmpeg = ''
-    try:
-        ffmpeg = os.environ['FFMPEG_DIRECTORY']
-    except:
-        print("Point FFMPEG_DIRECTORY environment variable to the location of FFMPEG")
-        return None
-    # Check if the binaries are not located in restricted directory
-    if -1 != ffmpeg.lower().find('system32'):
-        print('The ffmpeg binaries cannot be under system32 directory')
-        return None
-    # Check if the binaries exist
-    binaries = ffmpeg + os.sep + 'bin' + os.sep
-    if not (os.path.exists(binaries + 'ffmpeg') or os.path.exists(binaries + 'ffmpeg.exe')):
-        print('Please download the ffmpeg binaries from www.ffmpeg.org')
-        return None
-    return binaries
+        txt.write("file '" + prefix + "_" + str(idx) + ".avi'\n")
+    txt.close()
+    os.system("ffmpeg -f concat -safe 0 -i %s.txt -c copy %s.avi" % (prefix, prefix))
 
 
 if __name__ == "__main__":
@@ -107,7 +97,7 @@ if __name__ == "__main__":
                         help="FPS of output video")
     parser.add_argument("-c", "--codec", type=str, default="MJPG",
                         help="codec of output video")
-    parser.add_argument("-l", "--length", type=int, default=5,
+    parser.add_argument("-l", "--length", type=int, default=10,
                         help="length of seconds of summary")
     parser.add_argument("-d", "--display", type=int, default=-1,
                         help="Whether or not frames should be displayed")
