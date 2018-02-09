@@ -1,5 +1,4 @@
 # import the necessary packages
-from imutils.video import FileVideoStream
 from imutils.video.pivideostream import PiVideoStream
 from picamera.array import PiRGBArray
 from picamera import PiCamera
