@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-python fast_writer.py --output ~/Videos/test --picamera 1 --display 1
+python sudo python pi_writer.py --output ~/Desktop/test/test --display 1
