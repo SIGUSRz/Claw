@@ -24,6 +24,11 @@ def main(args):
     vs = PiVideoStream().start()
     time.sleep(2.0)
 
+    if not os.path.isdir(args["buffer"]):
+        os.makedirs(args["buffer"])
+    if not os.path.isdir(args["output"]):
+        os.makedirs(args["output"])
+
     # initialize the FourCC, video writer, dimensions of the frame, and
     # zeros array
     fourcc = cv2.VideoWriter_fourcc(*args["codec"])
@@ -36,12 +41,18 @@ def main(args):
     cv2.namedWindow("Frame", cv2.WINDOW_NORMAL)
     params = {
         "output": args["output"],
+        "buffer": args["buffer"],
+        "type": args["type"],
         "length": length,
         "fps": args["fps"],
-        "idx": 0
+        "counter": 0,
+        "temp": None,
+        "frame": None,
+        "idx": 0,
+        "res_code": 0
     }
 
-    tempfile = os.path.join(args["output"], buffer_name)
+    buffer_prefix = os.path.join(args["buffer"], buffer_name)
     # loop over some frames...this time using the threaded stream
     while True:
         # grab the frame from the threaded video stream and resize it
@@ -53,7 +64,7 @@ def main(args):
             # store the image dimensions, initialzie the video writer,
             # and construct the zeros array
             (h, w) = frame.shape[:2]
-            writer = cv2.VideoWriter(tempfile + "_" + str(timeframe) + ".avi",
+            writer = cv2.VideoWriter(buffer_prefix + "_" + str(timeframe) + "." + args["type"],
                                      fourcc, args["fps"], (w, h), True)
             params["writer"] = writer
             # cv2.setMouseCallback("Frame", click, params)
@@ -70,10 +81,8 @@ def main(args):
             counter = 0
             timeframe = (timeframe + 1) % length
             params["timeframe"] = timeframe
-            print(writer)
-            print(tempfile + "_" + str(timeframe) + ".avi")
             writer.release()
-            writer = cv2.VideoWriter(tempfile + "_" + str(timeframe) + ".avi",
+            writer = cv2.VideoWriter(buffer_prefix + "_" + str(timeframe) + "." + args["type"],
                                      fourcc, args["fps"], (w, h), True)
 
         if not q.empty():
@@ -96,47 +105,57 @@ def main(args):
     print("[INFO] done")
 
 
-def watcher(display):
+def watcher(dis):
     while True:
         start = time.time()
-        event = display.next_event()
+        event = dis.next_event()
         if event.type == X.ButtonPress and event.detail == 1:
             if time.time() - start > 5:
                 q.put(1)
                 print(q.empty())
 
 
-def click(param):
-    if param["counter"] != param["fps"] - 1 and param["writer"] is not None:
-        for img in param["temp"]:
-            param["writer"].write(img)
-        for i in range(len(param["temp"]), param["fps"]):
-            param["writer"].write(param["frame"])
-    param["writer"].release()
-    summary(param["output"], param["timeframe"], param["length"])
+def click(params):
+    if params["counter"] != params["fps"] - 1 and params["writer"] is not None:
+        for img in params["temp"]:
+            params["writer"].write(img)
+        for i in range(len(params["temp"]), params["fps"]):
+            params["writer"].write(params["frame"])
+    params["writer"].release()
+    summary(params)
 
 
-def summary(prefix, timeframe, length):
+def summary(params):
     print("[INFO] saving...")
-    txt = open(prefix + ".txt", "w")
-    for i in range(length - 1, -1, -1):
-        idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
-        txt.write("file '" + prefix + "_" + str(idx) + ".avi'\n")
-    txt.close()
-    os.system("ffmpeg -y -f concat -safe 0 -i %s.txt -c copy %s.avi" % (prefix, out_name))
+    buffer_prefix = os.path.join(params["buffer"], buffer_name)
+    target = '"concat:'
+    for i in range(params["length"] - 2, -1, -1):
+        idx = (params["length"] + params["timeframe"] - i) % params["length"] \
+            if i > params["timeframe"] else (params["timeframe"] - i) % params["length"]
+        target += buffer_prefix + "_" + str(idx) + ".%s|" % params["type"]
+    target = target.rstrip("|") + '"'
+    command = "ffmpeg -y -i %s -c copy %s_%d.avi" % \
+              (target, os.path.join(params["output"], out_name), params["res_code"])
+    params["res_code"] += 1
+    print("[INFO] saved")
+    os.system(command)
 
 
 if __name__ == "__main__":
     # construct the argument parse and parse the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output", required=True,
-                        help="path to output video file")
+                        help="path to output video directory")
+    parser.add_argument("-b", "--buffer", required=True,
+                        help="path to buffer directory")
     parser.add_argument("-p", "--picamera", type=int, default=-1,
                         help="whether or not the Raspberry Pi camera should be used")
     parser.add_argument("-f", "--fps", type=int, default=30,
                         help="FPS of output video")
     parser.add_argument("-c", "--codec", type=str, default="MJPG",
                         help="codec of output video")
+    parser.add_argument("-t", "--type", type=str, default="avi",
+                        help="video file type to save")
     parser.add_argument("-l", "--length", type=int, default=30,
                         help="length of seconds of summary")
     parser.add_argument("-d", "--display", type=int, default=-1,
