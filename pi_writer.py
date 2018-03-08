@@ -2,11 +2,19 @@
 from imutils.video.pivideostream import PiVideoStream
 from picamera.array import PiRGBArray
 from picamera import PiCamera
+from Xlib.display import Display
+from Xlib import X
+from threading import Thread
+from queue import Queue
 import argparse
 import imutils
 import time
 import cv2
 import os
+
+q = Queue()
+out_name = "result"
+buffer_name = "temp"
 
 
 def main(args):
@@ -30,10 +38,10 @@ def main(args):
         "output": args["output"],
         "length": length,
         "fps": args["fps"],
-        "mutex": True,
         "idx": 0
     }
 
+    tempfile = os.path.join(args["output"], buffer_name)
     # loop over some frames...this time using the threaded stream
     while True:
         # grab the frame from the threaded video stream and resize it
@@ -45,10 +53,10 @@ def main(args):
             # store the image dimensions, initialzie the video writer,
             # and construct the zeros array
             (h, w) = frame.shape[:2]
-            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
+            writer = cv2.VideoWriter(tempfile + "_" + str(timeframe) + ".avi",
                                      fourcc, args["fps"], (w, h), True)
             params["writer"] = writer
-            cv2.setMouseCallback("Frame", click, params)
+            # cv2.setMouseCallback("Frame", click, params)
 
         temp.append(frame)
         counter += 1
@@ -62,9 +70,15 @@ def main(args):
             counter = 0
             timeframe = (timeframe + 1) % length
             params["timeframe"] = timeframe
+            print(writer)
+            print(tempfile + "_" + str(timeframe) + ".avi")
             writer.release()
-            writer = cv2.VideoWriter(args["output"] + "_" + str(timeframe) + ".avi",
+            writer = cv2.VideoWriter(tempfile + "_" + str(timeframe) + ".avi",
                                      fourcc, args["fps"], (w, h), True)
+
+        if not q.empty():
+            click(params)
+            q.get()
 
         # check to see if the frame should be displayed to our screen
         if args["display"] > 0:
@@ -79,32 +93,37 @@ def main(args):
     print("[INFO] cleaning up...")
     cv2.destroyAllWindows()
     vs.stop()
-    print("[INFO] saving...")
+    print("[INFO] done")
 
 
-def click(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
-        if not param["mutex"]:
-            return
-        if param["counter"] != param["fps"] - 1 and param["writer"] is not None:
-            for img in param["temp"]:
-                param["writer"].write(img)
-            for i in range(len(param["temp"]), param["fps"]):
-                param["writer"].write(param["frame"])
-        param["writer"].release()
-        summary(param["output"], param["timeframe"], param["length"])
-        param["mutex"] = False
-    if event == cv2.EVENT_LBUTTONUP or event == cv2.EVENT_RBUTTONUP:
-        param["mutex"] = True
+def watcher(display):
+    while True:
+        start = time.time()
+        event = display.next_event()
+        if event.type == X.ButtonPress and event.detail == 1:
+            if time.time() - start > 5:
+                q.put(1)
+                print(q.empty())
+
+
+def click(param):
+    if param["counter"] != param["fps"] - 1 and param["writer"] is not None:
+        for img in param["temp"]:
+            param["writer"].write(img)
+        for i in range(len(param["temp"]), param["fps"]):
+            param["writer"].write(param["frame"])
+    param["writer"].release()
+    summary(param["output"], param["timeframe"], param["length"])
 
 
 def summary(prefix, timeframe, length):
+    print("[INFO] saving...")
     txt = open(prefix + ".txt", "w")
     for i in range(length - 1, -1, -1):
         idx = (length + timeframe - i) % length if i > timeframe else (timeframe - i) % length
         txt.write("file '" + prefix + "_" + str(idx) + ".avi'\n")
     txt.close()
-    os.system("ffmpeg -y -f concat -safe 0 -i %s.txt -c copy %s.avi" % (prefix, prefix))
+    os.system("ffmpeg -y -f concat -safe 0 -i %s.txt -c copy %s.avi" % (prefix, out_name))
 
 
 if __name__ == "__main__":
@@ -125,5 +144,12 @@ if __name__ == "__main__":
 
     arg = vars(parser.parse_args())
 
-    main(arg)
+    display = Display(':0')
+    root = display.screen().root
+    root.grab_pointer(True, X.ButtonPressMask | X.ButtonReleaseMask, X.GrabModeAsync,
+                      X.GrabModeAsync, 0, 0, X.CurrentTime)
+    watcher_thread = Thread(target=watcher, args=(display, ))
+    main_thread = Thread(target=main, args=(arg, ))
+    watcher_thread.start()
+    main_thread.start()
 
