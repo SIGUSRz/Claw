@@ -86,8 +86,11 @@ def main(args):
                                      fourcc, args["fps"], (w, h), True)
 
         if not q.empty():
+            flag = q.get()
+            if flag == 0:
+                writer.release()
+                break
             click(params)
-            q.get()
 
         # check to see if the frame should be displayed to our screen
         if args["display"] > 0:
@@ -113,6 +116,9 @@ def watcher(dis):
             if time.time() - start > 5:
                 q.put(1)
                 print(q.empty())
+        elif event.type == X.KeyPress and event.detail == 24:
+            q.put(0)
+            break
 
 
 def click(params):
@@ -167,6 +173,7 @@ if __name__ == "__main__":
     root = display.screen().root
     root.grab_pointer(True, X.ButtonPressMask | X.ButtonReleaseMask, X.GrabModeAsync,
                       X.GrabModeAsync, 0, 0, X.CurrentTime)
+    root.grab_keyboard(True, X.GrabModeAsync, X.GrabModeAsync, X.CurrentTime)
     watcher_thread = Thread(target=watcher, args=(display, ))
     main_thread = Thread(target=main, args=(arg, ))
     watcher_thread.start()
