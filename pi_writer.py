@@ -20,12 +20,8 @@ buffer_name = "temp"
 def main(args):
     # created a *threaded *video stream, allow the camera sensor to warmup,
     # and start the FPS counter
-    vs = None
+    vs = PiVideoStream().start() if args["picamera"] else WebcamVideoStream().start()
     print("[INFO] warming up camera...")
-    if args["picamera"]:
-        vs = PiVideoStream().start()
-    else:
-        vs = WebcamVideoStream().start()
     time.sleep(2.0)
 
     if not os.path.isdir(args["buffer"]):
