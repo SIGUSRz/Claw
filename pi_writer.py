@@ -1,7 +1,7 @@
-# import the necessary packages
 from imutils.video.pivideostream import PiVideoStream
 from picamera.array import PiRGBArray
 from picamera import PiCamera
+from imutils.video.webcamvideostream import WebcamVideoStream
 from Xlib.display import Display
 from Xlib import X
 from threading import Thread
@@ -20,8 +20,12 @@ buffer_name = "temp"
 def main(args):
     # created a *threaded *video stream, allow the camera sensor to warmup,
     # and start the FPS counter
+    vs = None
     print("[INFO] warming up camera...")
-    vs = PiVideoStream().start()
+    if args["picamera"]:
+        vs = PiVideoStream().start()
+    else:
+        vs = WebcamVideoStream().start()
     time.sleep(2.0)
 
     if not os.path.isdir(args["buffer"]):
@@ -93,14 +97,8 @@ def main(args):
             click(params)
 
         # check to see if the frame should be displayed to our screen
-        if args["display"] > 0:
+        if args["display"]:
             cv2.imshow("Frame", frame)
-
-        key = cv2.waitKey(1) & 0xFF
-        # if the `q` key was pressed, break from the loop
-        if key == ord("q"):
-            writer.release()
-            break
 
     print("[INFO] cleaning up...")
     cv2.destroyAllWindows()
@@ -154,7 +152,7 @@ if __name__ == "__main__":
                         help="path to output video directory")
     parser.add_argument("-b", "--buffer", required=True,
                         help="path to buffer directory")
-    parser.add_argument("-p", "--picamera", type=int, default=-1,
+    parser.add_argument("-p", "--picamera", type=bool,
                         help="whether or not the Raspberry Pi camera should be used")
     parser.add_argument("-f", "--fps", type=int, default=30,
                         help="FPS of output video")
@@ -164,7 +162,7 @@ if __name__ == "__main__":
                         help="video file type to save")
     parser.add_argument("-l", "--length", type=int, default=30,
                         help="length of seconds of summary")
-    parser.add_argument("-d", "--display", type=int, default=-1,
+    parser.add_argument("-d", "--display", type=bool,
                         help="Whether or not frames should be displayed")
 
     arg = vars(parser.parse_args())
