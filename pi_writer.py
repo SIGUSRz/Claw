@@ -123,9 +123,7 @@ if __name__ == "__main__":
     arg = vars(parser.parse_args())
 
     os.system("rm -rf %s" % arg["output"])
-    os.system("rm -rf %s" % arg["buffer"])
     os.makedirs(arg["output"])
-    os.makedirs(arg["buffer"])
     display = Display(':0')
     root = display.screen().root
     root.grab_pointer(True, X.ButtonPressMask | X.ButtonReleaseMask, X.GrabModeAsync,
