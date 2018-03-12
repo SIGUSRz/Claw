@@ -48,6 +48,7 @@ def main(args):
         "counter": 0,
         "temp": None,
         "frame": None,
+        "writer": None,
         "idx": 0,
         "res_code": 0
     }
