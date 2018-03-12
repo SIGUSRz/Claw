@@ -66,7 +66,7 @@ def main(args):
             if flag == 0:
                 writer.release()
                 break
-            writer = click(temp, writer, params)
+            writer = click(temp.copy(), writer, params)
             timeframe += 1
 
         # check to see if the frame should be displayed to our screen
