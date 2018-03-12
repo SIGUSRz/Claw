@@ -86,17 +86,18 @@ def watcher(dis):
         if event.type == X.ButtonPress and event.detail == 1:
             if time.time() - start > 5:
                 q.put(1)
-                print(q.empty())
         elif event.type == X.KeyPress and event.detail == 24:
             q.put(0)
             break
 
 
 def click(temp, writer, params):
+    print("[INFO] saving...")
     if writer is not None:
         for img in temp:
             writer.write(img)
     writer.release()
+    print("[INFO] saved %s" % params["name"])
     return cv2.VideoWriter(params["name"], params["fourcc"],
                                      params["fps"], (params["w"], params["h"]), True)
 
