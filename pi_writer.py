@@ -60,14 +60,13 @@ def main(args):
         frame = vs.read()
         frame = imutils.resize(frame, width=400)
 
-        if writer is None:
+        if params["writer"] is None:
             # store the image dimensions, initialzie the video writer,
             # and construct the zeros array
             (h, w) = frame.shape[:2]
-            writer = cv2.VideoWriter(buffer_prefix + "_" + str(timeframe) + "." + args["type"],
-                                     fourcc, args["fps"], (w, h), True)
-            params["writer"] = writer
-            # cv2.setMouseCallback("Frame", click, params)
+            params["writer"] = cv2.VideoWriter(buffer_prefix + "_" +
+                                               str(timeframe) + "." + args["type"],
+                                               fourcc, args["fps"], (w, h), True)
 
         temp.append(frame)
         counter += 1
@@ -76,19 +75,20 @@ def main(args):
         params["frame"] = frame
         if counter >= args["fps"]:
             for img in temp:
-                writer.write(img)
+                params["writer"].write(img)
             temp = list()
             counter = 0
             timeframe = (timeframe + 1) % length
             params["timeframe"] = timeframe
-            writer.release()
-            writer = cv2.VideoWriter(buffer_prefix + "_" + str(timeframe) + "." + args["type"],
-                                     fourcc, args["fps"], (w, h), True)
+            params["writer"].release()
+            params["writer"] = cv2.VideoWriter(buffer_prefix + "_" +
+                                               str(timeframe) + "." + args["type"],
+                                               fourcc, args["fps"], (w, h), True)
 
         if not q.empty():
             flag = q.get()
             if flag == 0:
-                writer.release()
+                params["writer"].release()
                 break
             click(params)
 
@@ -129,7 +129,7 @@ def summary(params):
     print("[INFO] saving...")
     buffer_prefix = os.path.join(params["buffer"], buffer_name)
     target = '"concat:'
-    for i in range(params["length"] - 2, -1, -1):
+    for i in range(params["length"] - 1, -1, -1):
         idx = (params["length"] + params["timeframe"] - i) % params["length"] \
             if i > params["timeframe"] else (params["timeframe"] - i) % params["length"]
         target += buffer_prefix + "_" + str(idx) + ".%s|" % params["type"]
@@ -137,8 +137,8 @@ def summary(params):
     command = "ffmpeg -y -i %s -c copy %s_%d.avi" % \
               (target, os.path.join(params["output"], out_name), params["res_code"])
     params["res_code"] += 1
-    print("[INFO] saved")
     os.system(command)
+    print("[INFO] saved")
 
 
 if __name__ == "__main__":
