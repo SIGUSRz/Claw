@@ -24,22 +24,35 @@ def main(args):
     print("[INFO] warming up camera...")
     time.sleep(2.0)
 
+    if not os.path.isdir(args["buffer"]):
+        os.makedirs(args["buffer"])
+    if not os.path.isdir(args["output"]):
+        os.makedirs(args["output"])
+
     # initialize the FourCC, video writer, dimensions of the frame, and
     # zeros array
-    writer = None
+    fourcc = cv2.VideoWriter_fourcc(*args["codec"])
+    (h, w) = (None, None)
+    length = args["length"]
     temp = list()
     counter = 0
     timeframe = 0
     cv2.namedWindow("Frame", cv2.WINDOW_NORMAL)
     params = {
-        "name": "",
-        "fourcc": cv2.VideoWriter_fourcc(*args["codec"]),
+        "output": args["output"],
+        "buffer": args["buffer"],
+        "type": args["type"],
+        "length": length,
         "fps": args["fps"],
-        "w": None,
-        "h": None
+        "counter": 0,
+        "temp": None,
+        "frame": None,
+        "writer": None,
+        "idx": 0,
+        "res_code": 0
     }
 
-    prefix = os.path.join(args["output"], out_name)
+    buffer_prefix = os.path.join(args["buffer"], buffer_name)
     # loop over some frames...this time using the threaded stream
     while True:
         # grab the frame from the threaded video stream and resize it
@@ -47,27 +60,37 @@ def main(args):
         frame = vs.read()
         frame = imutils.resize(frame, width=400)
 
-        params["name"] = prefix + "_" + str(timeframe) + "." + args["type"]
-        if writer is None:
+        if params["writer"] is None:
             # store the image dimensions, initialzie the video writer,
             # and construct the zeros array
-            (params["h"], params["w"]) = frame.shape[:2]
-            writer = cv2.VideoWriter(params["name"], params["fourcc"],
-                                     params["fps"], (params["w"], params["h"]), True)
+            (h, w) = frame.shape[:2]
+            params["writer"] = cv2.VideoWriter(buffer_prefix + "_" +
+                                               str(timeframe) + "." + args["type"],
+                                               fourcc, args["fps"], (w, h), True)
 
-        if counter >= params["fps"] * args["length"]:
-            temp.pop(0)
-        else:
-            counter += 1
         temp.append(frame)
+        counter += 1
+        params["counter"] = counter
+        params["temp"] = temp
+        params["frame"] = frame
+        if counter >= args["fps"]:
+            for img in temp:
+                params["writer"].write(img)
+            temp = list()
+            counter = 0
+            timeframe = (timeframe + 1) % length
+            params["timeframe"] = timeframe
+            params["writer"].release()
+            params["writer"] = cv2.VideoWriter(buffer_prefix + "_" +
+                                               str(timeframe) + "." + args["type"],
+                                               fourcc, args["fps"], (w, h), True)
 
         if not q.empty():
             flag = q.get()
             if flag == 0:
-                writer.release()
+                params["writer"].release()
                 break
-            click(temp, writer, params)
-            timeframe += 1
+            click(params)
 
         # check to see if the frame should be displayed to our screen
         if args["display"]:
@@ -92,13 +115,30 @@ def watcher(dis):
             break
 
 
-def click(temp, writer, params):
-    if writer is not None:
-        for img in temp:
-            writer.write(img)
-    writer.release()
-    return cv2.VideoWriter(params["name"], params["fourcc"],
-                                     params["fps"], (params["w"], params["h"]), True)
+def click(params):
+    if params["counter"] != params["fps"] - 1 and params["writer"] is not None:
+        for img in params["temp"]:
+            params["writer"].write(img)
+        for i in range(len(params["temp"]), params["fps"]):
+            params["writer"].write(params["frame"])
+    params["writer"].release()
+    summary(params)
+
+
+def summary(params):
+    print("[INFO] saving...")
+    buffer_prefix = os.path.join(params["buffer"], buffer_name)
+    target = '"concat:'
+    for i in range(params["length"] - 1, -1, -1):
+        idx = (params["length"] + params["timeframe"] - i) % params["length"] \
+            if i > params["timeframe"] else (params["timeframe"] - i) % params["length"]
+        target += buffer_prefix + "_" + str(idx) + ".%s|" % params["type"]
+    target = target.rstrip("|") + '"'
+    command = "ffmpeg -y -i %s -c copy %s_%d.avi" % \
+              (target, os.path.join(params["output"], out_name), params["res_code"])
+    params["res_code"] += 1
+    os.system(command)
+    print("[INFO] saved")
 
 
 if __name__ == "__main__":
@@ -106,6 +146,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output", required=True,
                         help="path to output video directory")
+    parser.add_argument("-b", "--buffer", required=True,
+                        help="path to buffer directory")
     parser.add_argument("-p", "--picamera", type=bool,
                         help="whether or not the Raspberry Pi camera should be used")
     parser.add_argument("-f", "--fps", type=int, default=30,
