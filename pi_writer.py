@@ -83,8 +83,8 @@ def watcher(dis):
     while True:
         start = time.time()
         event = dis.next_event()
-        if event.type == X.ButtonPress and event.detail == 1:
-            if time.time() - start > 5:
+        if event.type == X.ButtonPress and (int(event.detail) in [1, 2, 3]):
+            if time.time() - start > 10:
                 q.put(1)
         elif event.type == X.KeyPress and event.detail == 24:
             q.put(0)
@@ -133,4 +133,3 @@ if __name__ == "__main__":
     main_thread = Thread(target=main, args=(arg, ))
     watcher_thread.start()
     main_thread.start()
-
