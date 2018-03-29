@@ -1,14 +1,15 @@
-from imutils.video.pivideostream import PiVideoStream
+from imutils.video import VideoStream
 from picamera.array import PiRGBArray
 from picamera import PiCamera
-from imutils.video.webcamvideostream import WebcamVideoStream
 from Xlib.display import Display
 from Xlib import X
 from threading import Thread
 from queue import Queue
+from clip import KeyClipWriter
 import argparse
 import imutils
 import time
+import datetime
 import cv2
 import os
 
@@ -20,7 +21,7 @@ buffer_name = "temp"
 def main(args):
     # created a *threaded *video stream, allow the camera sensor to warmup,
     # and start the FPS counter
-    vs = PiVideoStream().start() if args["picamera"] else WebcamVideoStream().start()
+    vs = VideoStream(usePiCamera=args["picamera"]).start()
     print("[INFO] warming up camera...")
     time.sleep(2.0)
 
@@ -29,7 +30,8 @@ def main(args):
     writer = None
     temp = list()
     counter = 0
-    timeframe = 0
+    kcw = KeyClipWriter(bufSize=args["fps"] * args["length"])
+    consecFrames = 0
     cv2.namedWindow("Frame", cv2.WINDOW_NORMAL)
     params = {
         "name": "",
@@ -47,27 +49,31 @@ def main(args):
         frame = vs.read()
         frame = imutils.resize(frame, width=400)
 
-        params["name"] = prefix + "_" + str(timeframe) + "." + args["type"]
-        if writer is None:
-            # store the image dimensions, initialzie the video writer,
-            # and construct the zeros array
-            (params["h"], params["w"]) = frame.shape[:2]
-            writer = cv2.VideoWriter(params["name"], params["fourcc"],
-                                     params["fps"], (params["w"], params["h"]), True)
+        # if writer is None:
+        #     # store the image dimensions, initialzie the video writer,
+        #     # and construct the zeros array
+        #     (params["h"], params["w"]) = frame.shape[:2]
+        #     writer = cv2.VideoWriter(params["name"], params["fourcc"],
+        #                              params["fps"], (params["w"], params["h"]), True)
 
-        if counter >= params["fps"] * args["length"]:
-            temp.pop(0)
-        else:
-            counter += 1
-        temp.append(frame)
+        # if counter >= params["fps"] * args["length"]:
+        #     temp.pop(0)
+        # else:
+        #     counter += 1
+        # temp.append(frame)
+        kcw.update(frame)
 
         if not q.empty():
             flag = q.get()
             if flag == 0:
-                writer.release()
+                # writer.release()
+                kcw.finish()
                 break
-            writer = click(temp.copy(), writer, params)
-            timeframe += 1
+            # writer = click(temp.copy(), writer, params)
+            timestamp = datetime.datetime.now()
+            params["name"] = "{}/{}.avi".format(args["output"],
+                                                timestamp.strftime("%Y%m%d-%H%M%S"))
+            kcw.start(params["name"], params["fourcc"], params["fps"])
 
         # check to see if the frame should be displayed to our screen
         if args["display"]:
