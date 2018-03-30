@@ -103,13 +103,13 @@ if __name__ == "__main__":
                         help="path to output video directory")
     parser.add_argument("-p", "--picamera", type=bool,
                         help="whether or not the Raspberry Pi camera should be used")
-    parser.add_argument("-f", "--fps", type=int, default=120,
+    parser.add_argument("-f", "--fps", type=int, default=60,
                         help="FPS of output video")
     parser.add_argument("-c", "--codec", type=str, default="MJPG",
                         help="codec of output video")
     parser.add_argument("-t", "--type", type=str, default="avi",
                         help="video file type to save")
-    parser.add_argument("-l", "--length", type=int, default=16,
+    parser.add_argument("-l", "--length", type=int, default=18,
                         help="length of seconds of summary")
     parser.add_argument("-d", "--display", type=bool,
                         help="Whether or not frames should be displayed")
